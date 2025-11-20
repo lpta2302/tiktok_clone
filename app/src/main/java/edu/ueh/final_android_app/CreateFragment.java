@@ -1,9 +1,6 @@
 package edu.ueh.final_android_app;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.ContentValues;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,8 +14,6 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 
 import androidx.camera.video.FileOutputOptions;
-import androidx.camera.video.MediaStoreOutputOptions;
-import androidx.camera.video.OutputOptions;
 import androidx.camera.video.Quality;
 import androidx.camera.video.QualitySelector;
 import androidx.camera.video.Recorder;
@@ -30,20 +25,18 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.Toast;
-import android.widget.VideoView;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
-import java.util.Objects;
+
+import edu.ueh.final_android_app.util.DriveUtil;
 
 public class CreateFragment extends Fragment {
     private PreviewView previewView;
@@ -150,10 +143,26 @@ public class CreateFragment extends Fragment {
                 .start(ContextCompat.getMainExecutor(requireContext()), event -> {
                     if (event instanceof VideoRecordEvent.Finalize) {
                         Uri uri = Uri.fromFile(outputFile);
-                        Toast.makeText(requireContext(), "Video ready for upload", Toast.LENGTH_SHORT).show();
+                        Log.i("DEBUG", "exists = " + outputFile.exists());
+                        Log.i("DEBUG", "size = " + outputFile.length());
 
-                        // TODO: Upload to Firebase Storage
-//                        uploadVideoToFirebase(uri);
+                        if (outputFile.length() == 0) {
+                            Toast.makeText(requireContext(), "Video empty (CameraX fail)", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        var driveUtil = new DriveUtil(requireContext());
+                        driveUtil.uploadVideo(outputFile, new DriveUtil.UploadListener() {
+                            @Override
+                            public void onSuccess(String fileId) {
+                                Toast.makeText(requireContext(), "OK"+fileId, Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     }
                 });
 
