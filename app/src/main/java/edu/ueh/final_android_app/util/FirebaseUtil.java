@@ -9,10 +9,14 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import edu.ueh.final_android_app.models.Account;
+import edu.ueh.final_android_app.models.Like;
+import edu.ueh.final_android_app.models.Video;
 
 public class FirebaseUtil {
     public void saveUserToFirestore(Account account, OnSuccessListener<DocumentReference> onSuccess, OnFailureListener onFailure) {
@@ -73,6 +77,55 @@ public class FirebaseUtil {
             }
         });
 
+    }
+
+    public void saveVideoToFirestore(Video video, OnSuccessListener<DocumentReference> onSuccess, OnFailureListener onFailure) {
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("caption", video.getCaption());
+        data.put("driveFileId", video.getDriveFileId());
+        data.put("authorId", video.getAuthorId());
+        data.put("authorName", video.getAuthorName());
+        data.put("createdAt", video.getCreatedAt());
+        data.put("likes", video.getLikes());
+
+        db.collection("videos").add(data).addOnSuccessListener(onSuccess).addOnFailureListener(onFailure);
+    }
+
+    public void getAllVideos(OnVideosLoadListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("videos").get().addOnSuccessListener(query -> {
+            List<Video> result = new ArrayList<>();
+
+            for (DocumentSnapshot doc : query.getDocuments()) {
+                Map<String, Object> data = doc.getData();
+                if (data == null) continue;
+
+                String id = (String) data.get("id");
+                String caption = (String) data.get("caption");
+                String fileId = (String) data.get("driveFileId");
+                String authorId = (String) data.get("authorId");
+                String authorName = (String) data.get("authorName");
+                Long createdAt = (Long) data.get("createdAt");
+
+                List<String> likes = (List<String>) data.get("likes");
+
+                Video video = new Video(id, caption, fileId, authorId, authorName, createdAt, likes);
+
+                result.add(video);
+            }
+
+            listener.onSuccess(result);
+        }).addOnFailureListener(listener::onError);
+    }
+
+    public interface OnVideosLoadListener {
+        void onSuccess(List<Video> videos);
+
+        void onError(Exception e);
     }
 
     public interface OnUserGetListener {

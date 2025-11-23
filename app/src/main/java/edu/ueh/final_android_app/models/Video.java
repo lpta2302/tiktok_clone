@@ -2,36 +2,52 @@ package edu.ueh.final_android_app.models;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Video {
-    private int id;
-    private String caption;
-
-    private int videoUrl;
-
-    private Account author;
-
-    private List<Like> likes;
-
-    public Video (int id, String caption, int videoUrl, Account author, List<Like> likes) {
-        this.id = id;
+    private final String caption;
+    private final String driveFileId;          // URL tải từ Firebase Storage
+    private final String authorId;
+    private final String authorName;
+    private final long createdAt;
+    private String id;                // Firestore document id
+    private List<String> likes;
+    public Video(String id, String caption, String driveFileId, String authorId, String authorName, long createdAt, List<String> likes) {
         this.caption = caption;
-        this.videoUrl = videoUrl;
-        this.author = author;
-        this.likes = Objects.requireNonNullElseGet(likes, ArrayList::new);
+        this.driveFileId = driveFileId;
+        this.authorId = authorId;
+        this.authorName = authorName;
+        this.createdAt = createdAt;
+        this.id = id;
+        this.likes = likes;
     }
 
-    public int getId() {
+    public Video(String caption, String driveFileId, Account author, long createdAt, List<String> likes) {
+        this.caption = caption;
+        this.driveFileId = driveFileId;
+        this.authorId = author.getId();
+        this.authorName = author.getFullName();
+        this.createdAt = createdAt;
+        this.likes = likes;
+    }
+
+    public String getDriveFileId() {
+        return driveFileId;
+    }
+
+    public String getAuthorId() {
+        return authorId;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public int getVideoUrl(){
-        return videoUrl;
-    }
-
     public String getAuthorName() {
-        return author.getFullName();
+        return authorName;
     }
 
     public String getCaption() {
@@ -42,12 +58,16 @@ public class Video {
         return likes.size();
     }
 
-    public boolean isLiked(int userId){
-        return likes.stream().anyMatch(like -> like.getCreatedBy() == userId);
+    public boolean isLiked(String userId) {
+        return likes.stream().anyMatch(like -> like.equals(userId));
     }
 
-    public void addLike(Like newLike){
-        if (likes == null){
+    public List<String> getLikes() {
+        return likes;
+    }
+
+    public void addLike(String newLike) {
+        if (likes == null) {
             likes = new ArrayList<>();
         }
         likes.add(newLike);
